@@ -1,0 +1,55 @@
+version: '2'
+
+services:
+  nfs-server:
+    image: dhdp/nfs-server
+    container_name: nfs-server
+    hostname: nfs-server
+    domainname: dhdp.com
+    privileged: true
+    volumes:
+     - /var/nfs:/nfs
+    environment:
+      - NFS_DATA_DIR=/nfs
+    networks:
+      default:
+        aliases:
+          - nfs-server
+  pg-server:
+    image: dhdp/pg-server
+    container_name: pg-server
+    hostname: pg-server
+    domainname: dhdp.com
+    privileged: true
+    environment:
+      - NFS_DATA_DIR=/nfs
+      - NFS_HOST=nfs-server
+      - PGHOSTS=172.18.0.0/24
+      - PGPASSWORD=p0stgr3s
+    depends_on:
+      - "nfs-server"
+    networks:
+      default:
+        aliases:
+          - pg-server
+  ambari-server:
+    image: dhdp/ambari-base
+    container_name: ambari-server
+    hostname: ambari-server
+    domainname: dhdp.com
+    privileged: true
+    environment:
+      - PGHOST=pg-server
+      - PGADMINUSER=postgres
+      - PGADMINPASS=p0stgr3s
+      - PGDB=ambari
+      - PGUSER=ambari
+      - PGUSERPASS=dhdpAmb@r1
+    ports:
+      - "8080:8080"
+    depends_on:
+      - "pg-server"
+    networks:
+      default:
+        aliases:
+          - ambari-server
